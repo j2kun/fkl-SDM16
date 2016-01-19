@@ -37,7 +37,7 @@ Baselines section below). We will use `adult` as the prototype, and unless
 otherwise stated all datasets operate the same way with `adult` replaced by the
 dataset name. The raw data files are `adult.train` and `adult.test`. If
 preprocessing occurred to split a dataset into training and testing subsets,
-then the unprocessed data files are in the `preprocessed/` subdirectory along
+then the unprocessed data files are in the `preprocessing/` subdirectory along
 with python scripts to perform the (randomized) preprocessing. Additional
 preprocessing is performed to turn categorical features into (possibly many)
 binary features.
