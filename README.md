@@ -62,14 +62,15 @@ of the project.
 
 ## Experiments
 
-The experiments are organized by method. So random relabeling is in the
-experiment-random-relabeling.py file. Each experiment has a runAll() function
-that runs all of the experiments for every dataset and learner (SVM, logistic
-regression, and AdaBoost). Note that boosting and SVM take ~5-30 minutes per
-run on large datasets, and each experiment averages over 10 runs.
+The experiments are organized by method, using the acronyms from the paper.  So
+random relabeling (RR) is in the `experiment-RR.py` file. Each experiment has a
+`runAll()` function that runs all of the experiments for every dataset and
+learner (SVM, logistic regression, and AdaBoost). Note that boosting and SVM
+take ~5-30 minutes per run on large datasets, and each experiment averages over
+10 runs.
 
 ## Plots
 
 The main plots in the paper are produced by the MarginAnalyzer class in
-margins.py. See the MarginAnalyzer.plotMarginHistogram and
-MarginAnalyzer.plotTradeoff functions for details.
+`margin.py`. See the `MarginAnalyzer.plotMarginHistogram` and
+`MarginAnalyzer.plotTradeoff` functions for details.
