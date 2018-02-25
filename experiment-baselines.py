@@ -1,5 +1,5 @@
 from data import adult, german, singles
-from errorfunctions import labelError, statisticalParity, signedStatisticalParity, individualFairness, kNNfairnessNormalizedLP
+from errorfunctions import labelError, statisticalParity, signedStatisticalParity, individualFairness
 from utils import arrayErrorBars, errorBars, experimentCrossValidate
 from boosting import boost
 from svm import svmSKL, svmLinearSKL
@@ -73,8 +73,8 @@ def runBaselineAveraged(train, test, learner, protectedIndex, protectedValue):
    print("bias: %r" % (output[2],))
    print("ubif: %r" % (output[3],))
    return output
- 
- 
+
+
 def runAllGeneralStatistics():
   for dataset in (adult, german, singles):
     print('General statistics for ' + dataset.name)
@@ -104,7 +104,7 @@ def runAllCrossValidate():
 
 def runAll():
   runAllGeneralStatistics()
-  runAllCrossValidate()  
-      
+  runAllCrossValidate()
+
 if __name__ == '__main__':
   runAll()
