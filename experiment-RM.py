@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 from data import adult, german, singles
-from utils import errorBars, arrayErrorBars, experimentCrossValidate
+from utils import arrayErrorBars, experimentCrossValidate
 from boosting import boost
 from svm import svmSKL, svmLinearSKL
 from lr import lrSKL
-from weaklearners.decisionstump import buildDecisionStump
 from errorfunctions import signedStatisticalParity, labelError, individualFairness
-from massaging import randomOneSideMassageData
 
 
 @arrayErrorBars(2)
@@ -44,4 +42,3 @@ def runAll():
 
 if __name__ == '__main__':
    runAll()
-

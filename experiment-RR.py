@@ -8,6 +8,7 @@ import lr
 from errorfunctions import signedStatisticalParity, labelError, individualFairness
 from utils import arrayErrorBars, errorBars, experimentCrossValidate
 
+
 def boostingLearner(data, protectedIndex, protectedValue):
    h = boosting.boost(data)
    return randomOneSideRelabelData(h, data, protectedIndex, protectedValue)
@@ -17,9 +18,11 @@ def svmLearner(data, protectedIndex, protectedValue):
    h = svm.svmSKL(data, verbose=True)
    return randomOneSideRelabelData(h, data, protectedIndex, protectedValue)
 
+
 def svmLinearLearner(data, protectedIndex, protectedValue):
    h = svm.svmSKL(data, kernel='linear', verbose=True)
    return randomOneSideRelabelData(h, data, protectedIndex, protectedValue)
+
 
 def lrLearner(data, protectedIndex, protectedValue):
    h = lr.lrSKL(data)
@@ -37,11 +40,13 @@ def statistics(train, test, protectedIndex, protectedValue, learner):
    ubif = individualFairness(train, learner, flipProportion=0.2, passProtected=True)
    return error, bias, ubif
 
+
 @errorBars(10)
 def indFairnessStats(train, learner):
    print("Computing UBIF")
    ubif = individualFairness(train, learner, flipProportion=0.2, passProtected=True)
    return ubif
+
 
 def runAll():
    print("Random Relabeling")
