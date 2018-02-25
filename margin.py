@@ -1,21 +1,22 @@
-from utils import sign, sigmoid
-from errorfunctions import signedStatisticalParity, labelError, precomputedLabelError, precomputedLabelStatisticalParity, zeroOneSign
-import svm
-import numpy
-import lr
-import boosting
+from errorfunctions import signedStatisticalParity, precomputedLabelError, precomputedLabelStatisticalParity
+from utils import sign
 from weaklearners.decisionstump import buildDecisionStump
+import boosting
+import lr
+import numpy
 import random
+import svm
+
 
 try:
    import matplotlib.pyplot as plt
-except ImportError:
+except (ImportError, RuntimeError):
    pass
 
 
 class marginAnalyzer(object):
    def __init__(self, data=None, defaultThreshold=None, marginRange=None,
-                  protectedIndex=None, protectedValue=None, bulkMargin=None):
+                protectedIndex=None, protectedValue=None, bulkMargin=None):
       self.defaultThreshold = defaultThreshold
       if data is not None and 'trainingData' not in dir(self):
          self.splitData(data)
@@ -33,8 +34,9 @@ class marginAnalyzer(object):
 
       self.margins = numpy.concatenate([self.trainingMargins, self.validationMargins], axis=0)
       self.minMargin, self.maxMargin = min(self.margins), max(self.margins)
-      self.minShift, self.maxShift =  self.minMargin - self.defaultThreshold, self.maxMargin - self.defaultThreshold
-      if marginRange != None:
+      self.minShift, self.maxShift = (self.minMargin - self.defaultThreshold,
+                                      self.maxMargin - self.defaultThreshold)
+      if marginRange is not None:
          self.marginRange = marginRange
       else:
          self.marginRange = (self.minMargin, self.maxMargin)
@@ -44,9 +46,9 @@ class marginAnalyzer(object):
       raise NotImplementedError()
 
    def splitData(self, data):
-      self.data = random.sample(data,len(data))
-      self.trainingData = data[:len(data)//2]
-      self.validationData = data[len(data)//2:]
+      self.data = random.sample(data, len(data))
+      self.trainingData = data[:len(data) // 2]
+      self.validationData = data[len(data) // 2:]
 
    def setProtected(self, protectedIndex, protectedValue):
       assert protectedIndex is not None
@@ -54,41 +56,40 @@ class marginAnalyzer(object):
       self.protectedIndex = protectedIndex
       self.protectedValue = protectedValue
 
-   #returns True if x is protected, False otherwise; can be used as a condition for conditionalShiftClassifier
+   # returns True if x is protected, False otherwise;
+   # can be used as a condition for conditionalShiftClassifier
    def protected(self, x):
       assert self.protectedIndex is not None
       assert self.protectedValue is not None
       return x[self.protectedIndex] == self.protectedValue
 
-
-   #returns a classifier which takes a data point as an input and returns 1 if margin is above threshold, -1 otherwise
+   # returns a classifier which takes a data point as an input
+   # and returns 1 if margin is above threshold, -1 otherwise
    def classifier(self, threshold=None):
-      if threshold == None:
+      if threshold is None:
          threshold = lambda x: self.defaultThreshold
       return lambda x: 1 if self.margin(x) >= threshold(x) else -1
 
-
-   #returns a classifier with shifted threshold for data points satisfying condition
+   # returns a classifier with shifted threshold for data points satisfying condition
    def conditionalShiftClassifier(self, shift, condition=None):
-      if condition == None:
+      if condition is None:
          condition = self.protected
-      return self.classifier(lambda x: self.defaultThreshold + shift if condition(x) else self.defaultThreshold)
-
+      return self.classifier(
+        lambda x: self.defaultThreshold + shift if condition(x) else self.defaultThreshold)
 
    def conditionalMarginShiftedLabels(self, data, margins, shift, condition):
       # condition is margin >= threshold + shift, so that if shift is negative
       # the threshold is lower.
-      shiftedMargins = [(m-shift if condition(x[0]) else m) for (m, x) in zip(margins, data)]
+      shiftedMargins = [(m - shift if condition(x[0]) else m) for (m, x) in zip(margins, data)]
       labels = [1 if m >= self.defaultThreshold else -1 for m in shiftedMargins]
       return labels
 
-
-   #finds the shift which achieves goal=0 under condition
-   #goal takes two arguments, data and h
+   # finds the shift which achieves goal=0 under condition
+   # goal takes two arguments, data and h
    def optimalShift(self, goal=None, condition=None, rounds=20):
-      if goal == None:
+      if goal is None:
          goal = lambda d, h: signedStatisticalParity(d, self.protectedIndex, self.protectedValue, h)
-      if condition == None:
+      if condition is None:
          condition = self.protected
 
       low = self.minShift
@@ -97,15 +98,15 @@ class marginAnalyzer(object):
 
       minGoalValue = goal(dataToUse, self.conditionalShiftClassifier(low, condition))
       maxGoalValue = goal(dataToUse, self.conditionalShiftClassifier(high, condition))
-      #print((low, minGoalValue))
-      #print((high, maxGoalValue))
+      # print((low, minGoalValue))
+      # print((high, maxGoalValue))
 
       if sign(minGoalValue) != sign(maxGoalValue):
          # a binary search for zero
          for _ in range(rounds):
             midpoint = (low + high) / 2
             if (sign(goal(dataToUse, self.conditionalShiftClassifier(low, condition))) ==
-                  sign(goal(dataToUse, self.conditionalShiftClassifier(midpoint, condition)))):
+                    sign(goal(dataToUse, self.conditionalShiftClassifier(midpoint, condition)))):
                low = midpoint
             else:
                high = midpoint
@@ -114,7 +115,7 @@ class marginAnalyzer(object):
          print("Warning: bisection method not applicable")
          bestShift = None
          bestVal = float('inf')
-         step = (high-low)/rounds
+         step = (high - low) / rounds
          for newShift in numpy.arange(low, high, step):
             newVal = goal(dataToUse, self.conditionalShiftClassifier(newShift, condition))
             print(newVal)
@@ -125,33 +126,35 @@ class marginAnalyzer(object):
          return bestShift
 
    def optimalShiftClassifier(self, goal=None, condition=None, rounds=20):
-      if goal == None:
+      if goal is None:
          goal = lambda d, h: signedStatisticalParity(d, self.protectedIndex, self.protectedValue, h)
-      if condition == None:
+      if condition is None:
          condition = self.protected
       return self.conditionalShiftClassifier(self.optimalShift(goal, condition, rounds), condition)
 
-   #plots margins and incorrect margins for entire population and class satisfying condition
-   def plotMarginHistogram(self, condition=None, bins=40, plotLabels=('population','protected'), filename=None):
-      if condition == None:
+   # plots margins and incorrect margins for entire population and class satisfying condition
+   def plotMarginHistogram(self, condition=None, bins=40, plotLabels=('population', 'protected'), filename=None):
+      if condition is None:
          condition = self.protected
       marginList = self.margins
-      protectedMargins = [v for ((x,y),v) in zip(self.data, self.margins) if condition(x)]
-      incorrectMargins = [v for ((x,y),v) in zip(self.data, self.margins) if (v-self.defaultThreshold)*y < 0]
-      incorrectProtectedMargins = [v for ((x,y),v) in zip(self.data, self.margins)
-                  if (v-self.defaultThreshold)*y < 0 and condition(x)]
+      protectedMargins = [v for ((x, y), v) in zip(self.data, self.margins) if condition(x)]
+      incorrectMargins = [v for ((x, y), v) in zip(self.data, self.margins)
+                          if (v - self.defaultThreshold) * y < 0]
+      incorrectProtectedMargins = [
+        v for ((x, y), v) in zip(self.data, self.margins)
+        if (v - self.defaultThreshold) * y < 0 and condition(x)]
 
-      f, (ax1, ax2) = plt.subplots(2,1)
+      f, (ax1, ax2) = plt.subplots(2, 1)
 
       # distribution of signed margins on test data
       ax1.hist(marginList, bins=bins, label=plotLabels[0])
       ax1.hist(protectedMargins, bins=bins, label=plotLabels[1], color='y')
-      ax1.set_xlim([self.marginRange[0],self.marginRange[1]])
+      ax1.set_xlim([self.marginRange[0], self.marginRange[1]])
       ax1.set_title("Confidence values")
 
       ax2.hist(incorrectMargins, bins=bins, label=plotLabels[0])
       ax2.hist(incorrectProtectedMargins, bins=bins, label=plotLabels[1], color='y')
-      ax2.set_xlim([self.marginRange[0],self.marginRange[1]])
+      ax2.set_xlim([self.marginRange[0], self.marginRange[1]])
       ax2.set_title("Confidence values of incorrect examples")
 
       plt.subplots_adjust(hspace=.75)
@@ -163,10 +166,9 @@ class marginAnalyzer(object):
          plt.savefig(filename)
          plt.clf()
 
-
    def plotTradeoff(self, data=None, n=100, filename=None):
-      plotTitle='Shifted Decision Boundary Bias vs Error'
-      plotLabels=('Label error', 'Bias')
+      plotTitle = 'Shifted Decision Boundary Bias vs Error'
+      plotLabels = ('Label error', 'Bias')
       condition = self.protected
 
       if data is None:
@@ -186,7 +188,7 @@ class marginAnalyzer(object):
       srError = [0] * len(xs)
       srBias = [0] * len(xs)
 
-      for i,shift in enumerate(xs):
+      for i, shift in enumerate(xs):
          newLabels = shiftedLabels(shift)
          srError[i] = precomputedLabelError(data, newLabels)
          srBias[i] = precomputedLabelStatisticalParity(pts, newLabels, self.protectedIndex, self.protectedValue)
@@ -211,14 +213,12 @@ class marginAnalyzer(object):
 
 class boostingMarginAnalyzer(marginAnalyzer):
    def __init__(self, data, protectedIndex, protectedValue, numRounds=20,
-               weakLearner=buildDecisionStump, computeError=boosting.weightedLabelError):
-
+                weakLearner=buildDecisionStump, computeError=boosting.weightedLabelError):
       self.splitData(data)
-      _, self.hypotheses, self.alphas = boosting.detailedBoost(self.trainingData, numRounds, weakLearner, computeError)
-      super().__init__(defaultThreshold=0, marginRange=(-1,1), protectedIndex=protectedIndex,
-                  protectedValue=protectedValue)
-
-
+      _, self.hypotheses, self.alphas = boosting.detailedBoost(
+         self.trainingData, numRounds, weakLearner, computeError)
+      super().__init__(defaultThreshold=0, marginRange=(-1, 1), protectedIndex=protectedIndex,
+                       protectedValue=protectedValue)
 
    def margin(self, x):
       return boosting.margin(x, self.hypotheses, self.alphas)
@@ -232,7 +232,8 @@ class svmRBFMarginAnalyzer(marginAnalyzer):
       self.bulkMargin = outputs[-2]
       self.margin = outputs[-1]
       super().__init__(defaultThreshold=0, protectedIndex=protectedIndex,
-                     protectedValue=protectedValue, bulkMargin=self.bulkMargin)
+                       protectedValue=protectedValue, bulkMargin=self.bulkMargin)
+
 
 class svmLinearMarginAnalyzer(marginAnalyzer):
    def __init__(self, data, protectedIndex, protectedValue, gamma=svm.DEFAULT_GAMMA):
@@ -242,21 +243,20 @@ class svmLinearMarginAnalyzer(marginAnalyzer):
       self.bulkMargin = outputs[-2]
       self.margin = outputs[-1]
       super().__init__(defaultThreshold=0, protectedIndex=protectedIndex,
-                     protectedValue=protectedValue, bulkMargin=self.bulkMargin)
+                       protectedValue=protectedValue, bulkMargin=self.bulkMargin)
+
 
 class lrSKLMarginAnalyzer(marginAnalyzer):
    def __init__(self, data, protectedIndex, protectedValue):
       self.splitData(data)
       self.margin = lr.lrDetailedSKL(self.trainingData)[0]
-      super().__init__(defaultThreshold=0.5, marginRange=(0,1), protectedIndex=protectedIndex,
-                     protectedValue=protectedValue)
+      super().__init__(defaultThreshold=0.5, marginRange=(0, 1), protectedIndex=protectedIndex,
+                       protectedValue=protectedValue)
 
 
 if __name__ == "__main__":
-   from data import adult, german, singles
+   from data import german
    dataModule = german
    tr, te = dataModule.load()
    ma = svmLinearMarginAnalyzer(tr, dataModule.protectedIndex, dataModule.protectedValue)
-   ma.plotTradeoff(filename = "plots/tradeoffs/german-svmlinear-T-5-31.pdf")
-
-
+   ma.plotTradeoff(filename="plots/tradeoffs/german-svmlinear-T-5-31.pdf")

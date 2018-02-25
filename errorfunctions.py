@@ -1,6 +1,4 @@
-from utils import sign, zeroOneSign, normalize01, lpDistance
 import random
-import heapq
 
 
 def minLabelErrorOfHypothesisAndNegation(data, h):
@@ -22,39 +20,39 @@ def makeLinearCombination(error1, error2, error1Weight):
 
 
 def precomputedLabelError(data, labels):
-   return sum(1 for (x,l) in zip(data, labels) if x[1] != l) / len(data)
+   return sum(1 for (x, l) in zip(data, labels) if x[1] != l) / len(data)
 
 
 def labelError(data, h):
-   return len([1 for (x,y) in data if h(x) != y]) / len(data)
+   return len([1 for (x, y) in data if h(x) != y]) / len(data)
 
 
 # data is a list of unlabeled examples
 def precomputedLabelStatisticalParity(data, labels, protectedIndex, protectedValue, weights=None):
-   if weights == None:
-      weights = [1]*len(data)
+   if weights is None:
+      weights = [1] * len(data)
 
-   protectedClass = [(x,wt,l) for (x,wt,l) in zip(data, weights, labels)
-                        if x[protectedIndex] == protectedValue]
-   elseClass  = [(x,wt,l) for (x,wt,l) in zip(data, weights, labels)
-                        if x[protectedIndex] != protectedValue]
+   protectedClass = [(x, wt, l) for (x, wt, l) in zip(data, weights, labels)
+                     if x[protectedIndex] == protectedValue]
+   elseClass = [(x, wt, l) for (x, wt, l) in zip(data, weights, labels)
+                if x[protectedIndex] != protectedValue]
 
    if len(protectedClass) == 0:
       print("Nobody in the protected class")
-      return sum(w for (x,w,l) in elseClass  if l == 1) / sum(w for (x,w,l) in elseClass)
+      return sum(w for (x, w, l) in elseClass if l == 1) / sum(w for (x, w, l) in elseClass)
    elif len(elseClass) == 0:
       print("Nobody in the else class")
-      return -sum(w for (x,w,l) in protectedClass if l == 1) / sum(w for (x,w,l) in protectedClass)
+      return -sum(w for (x, w, l) in protectedClass if l == 1) / sum(w for (x, w, l) in protectedClass)
    else:
-      protectedProb = sum(w for (x,w,l) in protectedClass if l == 1) / sum(w for (x,w,l) in protectedClass)
-      elseProb =  sum(w for (x,w,l) in elseClass  if l == 1) / sum(w for (x,w,l) in elseClass)
+      protectedProb = sum(w for (x, w, l) in protectedClass if l == 1) / sum(w for (x, w, l) in protectedClass)
+      elseProb = sum(w for (x, w, l) in elseClass if l == 1) / sum(w for (x, w, l) in elseClass)
 
    return elseProb - protectedProb
 
 
 # data is a list of labeled examples (this is weird; should be consistent)
 def signedStatisticalParity(data, protectedIndex, protectedValue, h=None, weights=None):
-   if len(data[0]) == 2: # should do better type checking here...
+   if len(data[0]) == 2:  # should do better type checking here...
       pts, labels = zip(*data)
    else:
       pts = data
@@ -79,20 +77,20 @@ def statisticalParity(data, protectedIndex, protectedValue, h=None, weights=None
 def individualFairness(data, learner, flipProportion=0.2, passProtected=False):
    protectedIndex = 0
    protectedValue = 0
-   unbiasedData = [((random.choice([0,1]),) + x[0], x[1]) for x in data]
+   unbiasedData = [((random.choice([0, 1]), ) + x[0], x[1]) for x in data]
 
-   indicesOfProtected = [i for i,x in enumerate(unbiasedData)
-                           if x[0][protectedIndex] == 0 and x[1] == 1]
+   indicesOfProtected = [i for i, x in enumerate(unbiasedData)
+                         if x[0][protectedIndex] == 0 and x[1] == 1]
    m = len(indicesOfProtected)
 
    indicesOfFlippedData = set(random.sample(indicesOfProtected, int(flipProportion * m)))
-   biasedData = [(x[0], (-1 if i in indicesOfFlippedData else x[1])) for i,x in enumerate(unbiasedData)]
+   biasedData = [(x[0], (-1 if i in indicesOfFlippedData else x[1])) for i, x in enumerate(unbiasedData)]
 
    if passProtected:
       h = learner(biasedData, protectedIndex, protectedValue)
    else:
       h = learner(biasedData)
 
-   flippedPts = [x for i,x in enumerate(biasedData) if i in indicesOfFlippedData]
-   error = sum(h(x) != y for (x,y) in flippedPts) / len(flippedPts)
+   flippedPts = [x for i, x in enumerate(biasedData) if i in indicesOfFlippedData]
+   error = sum(h(x) != y for (x, y) in flippedPts) / len(flippedPts)
    return error

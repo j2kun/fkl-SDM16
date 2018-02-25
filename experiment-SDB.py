@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 
-import random
-import boosting
-import svm
-import lr
 from data import adult, german, singles
-from weaklearners.decisionstump import buildDecisionStump
 from errorfunctions import signedStatisticalParity, labelError, individualFairness
-from utils import errorBars, arrayErrorBars, sign, variance, experimentCrossValidate
+from utils import errorBars, arrayErrorBars, experimentCrossValidate
 from margin import svmRBFMarginAnalyzer, svmLinearMarginAnalyzer, boostingMarginAnalyzer, lrSKLMarginAnalyzer
 
 
 def lrLearner(train, protectedIndex, protectedValue):
-   marginAnalyzer = lrLearnerMarginAnalyzer(train, protectedIndex, protectedValue)
+   marginAnalyzer = lrSKLMarginAnalyzer(train, protectedIndex, protectedValue)
    shift = marginAnalyzer.optimalShift()
    print('best shift is: %r' % (shift,))
    return marginAnalyzer.conditionalShiftClassifier(shift)
@@ -57,6 +52,7 @@ def indFairnessStats(train, learner):
    ubif = individualFairness(train, learner, flipProportion=0.2, passProtected=True)
    print("UBIF:", ubif)
    return ubif
+
 
 def runAll():
    print("Shifted Decision Boundary Relabeling")
