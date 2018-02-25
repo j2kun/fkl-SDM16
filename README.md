@@ -60,6 +60,47 @@ of the project.
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0), -1)
 
+## An example experiment
+
+An example experiment, testing the linear regression learner on the German dataset.
+
+```
+Python 3.6.3 (default, Oct  4 2017, 06:09:15) 
+[GCC 4.2.1 Compatible Apple LLVM 9.0.0 (clang-900.0.37)] on darwin
+>>> from data import german
+>>> train, test = german.load()
+>>> from margin import *
+>>> def lrLearner(train, protectedIndex, protectedValue):
+...    marginAnalyzer = lrSKLMarginAnalyzer(train, protectedIndex, protectedValue)
+...    shift = marginAnalyzer.optimalShift()
+...    print('best shift is: %r' % (shift,))
+...    return marginAnalyzer.conditionalShiftClassifier(shift)
+... 
+>>> h = lrLearner(train, german.protectedIndex, german.protectedValue)
+best shift is: -0.19250157835095894
+>>> from errorfunctions import signedStatisticalParity, labelError, individualFairness
+>>> labelError(test, h)
+0.25825825825825827 
+```
+
+Copy-pastable:
+
+```
+from data import german
+from errorfunctions import signedStatisticalParity, labelError, individualFairness
+from margin import *
+
+train, test = german.load()
+def lrLearner(train, protectedIndex, protectedValue):
+    marginAnalyzer = lrSKLMarginAnalyzer(train, protectedIndex, protectedValue)
+    shift = marginAnalyzer.optimalShift()
+    print('best shift is: %r' % (shift,))
+    return marginAnalyzer.conditionalShiftClassifier(shift)
+ 
+h = lrLearner(train, german.protectedIndex, german.protectedValue)
+labelError(test, h)
+```
+
 ## Experiments
 
 The experiments are organized by method, using the acronyms from the paper.  So
