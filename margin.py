@@ -1,15 +1,15 @@
-from utils import sign, sigmoid
-from errorfunctions import signedStatisticalParity, labelError, precomputedLabelError, precomputedLabelStatisticalParity, zeroOneSign
-import svm
-import numpy
-import lr
-import boosting
+from errorfunctions import signedStatisticalParity, precomputedLabelError, precomputedLabelStatisticalParity
+from utils import sign
 from weaklearners.decisionstump import buildDecisionStump
+import boosting
+import lr
+import numpy
 import random
+import svm
 
 try:
    import matplotlib.pyplot as plt
-except ImportError:
+except:
    pass
 
 
@@ -34,7 +34,7 @@ class marginAnalyzer(object):
       self.margins = numpy.concatenate([self.trainingMargins, self.validationMargins], axis=0)
       self.minMargin, self.maxMargin = min(self.margins), max(self.margins)
       self.minShift, self.maxShift =  self.minMargin - self.defaultThreshold, self.maxMargin - self.defaultThreshold
-      if marginRange != None:
+      if marginRange is not None:
          self.marginRange = marginRange
       else:
          self.marginRange = (self.minMargin, self.maxMargin)

@@ -2,6 +2,7 @@ import random
 import math
 import numpy
 
+
 # draw: [float] -> int
 # pick an index from the given list of floats proportionally
 # to the size of the entry (i.e. normalize to a probability
@@ -29,14 +30,14 @@ def sign(x):
 
 
 def zeroOneSign(x):
-	return 1 if x >= 0 else 0
+    return 1 if x >= 0 else 0
 
 
 def median(L):
     L.sort()
     half = int(len(L) / 2)
     if len(L) % 2 == 0:
-        return (L[half+1] + L[half]) / 2.0
+        return (L[half + 1] + L[half]) / 2.0
     else:
         return L[half]
 
@@ -88,41 +89,46 @@ def argmin(L):
    theMin = L[0]
    minIndex = 0
 
-   for i,x in enumerate(L, start=1):
+   for i, x in enumerate(L, start=1):
       if x < theMin:
          minIndex = i
          theMin = x
 
    return minIndex, theMin
 
-#normalize a matrix such that each entry is between 0 and 1
+
+# normalize a matrix such that each entry is between 0 and 1
 def normalize01(data):
    a = [min(row[j] for row in data) for j in range(len(data[0]))]
    b = [max(row[j] for row in data) for j in range(len(data[0]))]
-   return [tuple([(row[j]-a[j])/(b[j]-a[j]) if b[j]!=a[j] else 0 for j in range(len(row))]) for row in data]
+   return [tuple([(row[j] - a[j]) / (b[j] - a[j]) if b[j] != a[j] else 0
+           for j in range(len(row))]) for row in data]
+
 
 def lpNorm(v, p):
-   return math.pow(sum(math.pow(abs(x), p) for x in v), 1/p)
+   return math.pow(sum(math.pow(abs(x), p) for x in v), 1 / p)
+
 
 def lpDistance(u, v, p):
-   assert len(u)==len(v)
-   return lpNorm([u[i]-v[i] for i in range(len(u))], p)
+   assert len(u) == len(v)
+   return lpNorm([u[i] - v[i] for i in range(len(u))], p)
 
 
 def sigmoid(z):
    return 1.0 / (1 + numpy.exp(-z))
- 
+
+
 def experimentCrossValidate(dataModule, learner, times, statistics, massage=False):
    PI = dataModule.protectedIndex
    PV = dataModule.protectedValue
    originalTrain, originalTest = dataModule.load()
    allData = originalTrain + originalTest
-   
-   variances = [[], [], []] #error, bias, ubif
+
+   variances = [[], [], []]  # error, bias, ubif
    mins = [float('inf'), float('inf'), float('inf')]
    maxes = [-float('inf'), -float('inf'), -float('inf')]
    avgs = [0, 0, 0]
-   
+
    for time in range(times):
      random.shuffle(allData)
      train = allData[:len(originalTrain)]
@@ -136,14 +142,14 @@ def experimentCrossValidate(dataModule, learner, times, statistics, massage=Fals
      print("error: %r" % (output[0],))
      print("bias: %r" % (output[1],))
      print("ubif: %r" % (output[2],))
-     
+
      for i in range(len(output)):
-       avgs[i] += (output[i][0] - avgs[i]) / (time + 1)
-       mins[i] = min(mins[i], output[i][1])
-       maxes[i] = max(maxes[i], output[i][2])
-       variances[i].append(output[i][0]) # was too lazy to implement online alg
-       # warning: this doesn't take into account the variance of each split
-   
+        avgs[i] += (output[i][0] - avgs[i]) / (time + 1)
+        mins[i] = min(mins[i], output[i][1])
+        maxes[i] = max(maxes[i], output[i][2])
+        variances[i].append(output[i][0])  # was too lazy to implement online alg
+        # warning: this doesn't take into account the variance of each split
+
    for i in range(len(variances)):
      variances[i] = variance(variances[i])
 
