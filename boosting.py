@@ -1,13 +1,13 @@
 import math
 from utils import draw, normalize, sign
-from errorfunctions import labelError
 from weaklearners.decisionstump import buildDecisionStump
+
 
 # compute the weighted error of a given hypothesis on a distribution
 # return all of the hypothesis results and the error
 def weightedLabelError(h, examples, weights):
-   hypothesisResults = [h(x)*y for (x,y) in examples] # +1 if correct, else -1
-   return hypothesisResults, sum(w for (z,w) in zip(hypothesisResults, weights) if z < 0)
+   hypothesisResults = [h(x) * y for (x, y) in examples]  # +1 if correct, else -1
+   return hypothesisResults, sum(w for (z, w) in zip(hypothesisResults, weights) if z < 0)
 
 
 # boost: [(list, label)], learner, int -> (list -> label)
@@ -20,6 +20,7 @@ def adaboostGenerator(examples, weakLearner, rounds, computeError=weightedLabelE
 
    for t in range(rounds):
       print(t)
+
       def drawExample():
          return examples[draw(distr)]
 
@@ -28,16 +29,16 @@ def adaboostGenerator(examples, weakLearner, rounds, computeError=weightedLabelE
 
       alpha[t] = 0.5 * math.log((1 - error) / (.0001 + error))
       distr = normalize([d * math.exp(-alpha[t] * r)
-                         for (d,r) in zip(distr, hypothesisResults)])
+                         for (d, r) in zip(distr, hypothesisResults)])
 
       def weightedMajorityVote(x):
-         return sign(sum(a * h(x) for (a, h) in zip(alpha, hypotheses[:t+1])))
+         return sign(sum(a * h(x) for (a, h) in zip(alpha, hypotheses[:t + 1])))
 
-      yield weightedMajorityVote, hypotheses[:t+1], alpha[:t+1]
+      yield weightedMajorityVote, hypotheses[:t + 1], alpha[:t + 1]
 
 
-#convenience wrapper for boosting
-#returns the outputted hypothesis from boosting
+# convenience wrapper for boosting
+# returns the outputted hypothesis from boosting
 def boost(trainingData, numRounds=20, weakLearner=buildDecisionStump, computeError=weightedLabelError):
    generator = adaboostGenerator(trainingData, weakLearner, numRounds, computeError)
 
@@ -49,7 +50,8 @@ def boost(trainingData, numRounds=20, weakLearner=buildDecisionStump, computeErr
 
 # call an optional diagnostic function to output round-wise intermediate results
 # return more information at the end
-def detailedBoost(trainingData, numRounds=20, weakLearner=buildDecisionStump, computeError=weightedLabelError, diagnostic=None):
+def detailedBoost(trainingData, numRounds=20, weakLearner=buildDecisionStump,
+                  computeError=weightedLabelError, diagnostic=None):
    generator = adaboostGenerator(trainingData, weakLearner, numRounds, computeError)
 
    for h, hypotheses, alphas in generator:
@@ -62,13 +64,13 @@ def detailedBoost(trainingData, numRounds=20, weakLearner=buildDecisionStump, co
 # compute the margin of a point with the label to express whether it's correct
 # alpha is the weights of the hypotheses from the boosting algorithm
 def marginWithLabel(point, label, hypotheses, alpha):
-	return label * sum(a*h(point) for (h, a) in zip(hypotheses, alpha)) / sum(alpha)
+    return label * sum(a * h(point) for (h, a) in zip(hypotheses, alpha)) / sum(alpha)
 
 
 # compute the margin of a point
 # alpha is the weights of the hypotheses from the boosting algorithm
 def margin(point, hypotheses, alpha):
-	return sum(a*h(point) for (h, a) in zip(hypotheses, alpha)) / sum(alpha)
+    return sum(a * h(point) for (h, a) in zip(hypotheses, alpha)) / sum(alpha)
 
 
 # compute the absolute value of the margin of a point

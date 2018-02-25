@@ -22,4 +22,3 @@ for dataset in dataModules:
 
       ma.plotTradeoff(filename='plots/tradeoffs/%s-T.pdf' % filenameBase)
       print('-' * 80)
-
